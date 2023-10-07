@@ -1,0 +1,12 @@
+# Changelog
+
+
+## 0.1.1
+
+- [Bug fix] Where Cura might crash without even providing a Sentry dialog due to a missing QMediaplayer backend. Github issue #2
+- [Feature] Added Fading in/out of music.  Github issue #1
+
+
+## 0.1.0
+
+- Initial release

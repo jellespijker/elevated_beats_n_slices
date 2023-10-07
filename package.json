@@ -9,7 +9,7 @@
   "display_name": "Elevated Beats 'n Slices",
   "package_id": "ElevatedBeatsnSlices",
   "package_type": "plugin",
-  "package_version": "0.1.0",
+  "package_version": "0.1.1",
   "sdk_version": 8,
   "sdk_version_semver": "8.4.0",
   "website": "https://github.com/jellespijker/elevated_beats_n_slices"
