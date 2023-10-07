@@ -27,7 +27,11 @@ class ElevatedBeatsNSlicesPlugin(Extension):
 
     def _onBackendStateChange(self, state):
         if state == BackendState.Processing:
-            self._player = QMediaPlayer()
+            try:
+                self._player = QMediaPlayer()
+            except Exception as e:
+                Logger.error(f"QMediaPlayer could not be initialized: {str(e)}")
+                return
             self._audio_output = QAudioOutput()
             music_path = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
             Logger.debug(f"Playing {music_path}")
@@ -39,7 +43,7 @@ class ElevatedBeatsNSlicesPlugin(Extension):
             self._fadeInTimer.timeout.connect(self._fadein)
             self._fadeInTimer.start(self._fader_speed)  # Every 50 ms the volume will be increased
             self._player.play()
-        elif state == BackendState.Done or state == BackendState.Error:
+        elif self._player != None and (state == BackendState.Done or state == BackendState.Error):
             Logger.debug("Fading out")
             self._fadeInTimer.stop()  # Stop the fade-in timer
             self._fadeOutTimer = QTimer()
