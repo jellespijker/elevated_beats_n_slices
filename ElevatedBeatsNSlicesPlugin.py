@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from UM.Extension import Extension
 from cura.CuraApplication import CuraApplication
@@ -8,6 +9,8 @@ from UM.Logger import Logger
 
 from PyQt6.QtCore import QUrl, QTimer
 from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
+
+from UM.Message import Message
 
 catalog = i18nCatalog("cura")
 
@@ -19,6 +22,7 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._player = None
         self._audio_output = None
         self._fader_speed = 50
+        self._error_message: Optional[Message] = None  # Pop-up message that shows errors.
         CuraApplication.getInstance().engineCreatedSignal.connect(self._onEngineCreated)
 
     def _onEngineCreated(self):
@@ -26,6 +30,27 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._backend.backendStateChange.connect(self._onBackendStateChange)
         self._backend.slicingCancelled.connect(self._onSlicingCancelled)
         self._backend.backendError.connect(self._onBackendError)
+
+    def handle_media_error(self, mediaError):
+        error_dict = {
+            QMediaPlayer.NoError: "NoError - No error has occurred.",
+            QMediaPlayer.ResourceError: "ResourceError - A media resource couldn't be resolved.",
+            QMediaPlayer.FormatError: "FormatError - The format of a media resource isn't supported.",
+            QMediaPlayer.NetworkError: "NetworkError - A network error occurred.",
+            QMediaPlayer.AccessDeniedError: "AccessDeniedError - There are not the necessary permissions to play a media resource.",
+            QMediaPlayer.ServiceMissingError: "ServiceMissingError -  A valid playback service was not found.",
+            QMediaPlayer.MediaIsPlaylist: "MediaIsPlaylist - Media is a playlist."
+        }
+
+        err_code = mediaError.error()
+        err_message = mediaError.errorString()
+
+        self._error_message = Message(catalog.i18nc("@info:status",
+                                                    f"An error occurred in QMediaPlayer: {error_dict.get(err_code, str(err_code))}\nError Message: {err_message}\n\nPlease report this error to the plugin developer.."),
+                                      title = catalog.i18nc("@info:title", "Elevated Beats 'n' Slices Error"),
+                                      message_type = Message.MessageType.ERROR)
+        self._error_message.show()
+        Logger.error(f"An error occurred in QMediaPlayer: {error_dict.get(err_code, str(err_code))}, Error Message: {err_message}")
 
     def _stopPlaying(self):
         Logger.debug("Fading out")
@@ -37,6 +62,7 @@ class ElevatedBeatsNSlicesPlugin(Extension):
     def _onSlicingCancelled(self):
         if self._player is not None:
             self._stopPlaying()
+            self._error_message.show()
 
     def _onBackendError(self):
         if self._player is not None:
@@ -44,11 +70,20 @@ class ElevatedBeatsNSlicesPlugin(Extension):
 
     def _onBackendStateChange(self, state):
         if state == BackendState.Processing:
+            Logger.info("Starting to play music")
             try:
                 self._player = QMediaPlayer()
+                Logger.debug(f"QMediaPlayer initialized")
+                self._player.errorOccurred.connect(self.handle_media_error)
             except Exception as e:
+                self._error_message = Message(catalog.i18nc("@info:status",
+                                                            f"QMediaPlayer could not be initialized: {str(e)}\n\nPlease report this error to the plugin developer."),
+                                              title = catalog.i18nc("@info:title", "Elevated Beats 'n' Slices Error"),
+                                              message_type = Message.MessageType.ERROR)
+                self._error_message.show()
                 Logger.error(f"QMediaPlayer could not be initialized: {str(e)}")
                 return
+            Logger.debug(f"Setting up audio output")
             self._audio_output = QAudioOutput()
             music_path = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
             Logger.debug(f"Playing {music_path}")
