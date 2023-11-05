@@ -1,11 +1,17 @@
 # Changelog
 
+## 0.1.2
+
+- [Feature] Added extra logging to help debug QMediaPlayer issues. Github issue #10
+
+- [Bug fix] Stop the music when the user presses `cancel` or CuraEngine crashes. Github issue #6
+- [Bug fix] fix typo in website url on the UltiMaker Cura Marketplace.
 
 ## 0.1.1
 
-- [Bug fix] Where Cura might crash without even providing a Sentry dialog due to a missing QMediaplayer backend. Github issue #2
 - [Feature] Added Fading in/out of music.  Github issue #1
 
+- [Bug fix] Where Cura might crash without even providing a Sentry dialog due to a missing QMediaplayer backend. Github issue #2
 
 ## 0.1.0
 
