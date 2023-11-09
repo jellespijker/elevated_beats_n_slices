@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- [Bug fix] Fixed a bug where the plugin would crash Cura when the user presses `cancel` multiple times. Github issue #11
+
 ## 0.1.2
 
 - [Feature] Added extra logging to help debug QMediaPlayer issues. Github issue #10
