@@ -28,8 +28,8 @@ class ElevatedBeatsNSlicesPlugin(Extension):
     def _onEngineCreated(self):
         self._backend = CuraApplication.getInstance().getBackend()
         self._backend.backendStateChange.connect(self._onBackendStateChange)
-        self._backend.slicingCancelled.connect(self._onSlicingCancelled)
-        self._backend.backendError.connect(self._onBackendError)
+        self._backend.slicingCancelled.connect(self._stopPlaying)
+        self._backend.backendError.connect(self._stopPlaying)
 
     def handle_media_error(self, mediaError):
         error_dict = {
@@ -59,15 +59,6 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._fadeOutTimer.timeout.connect(self._fadeout)
         self._fadeOutTimer.start(self._fader_speed)  # Every 50 ms the volume will be lowered
 
-    def _onSlicingCancelled(self):
-        if self._player is not None:
-            self._stopPlaying()
-            self._error_message.show()
-
-    def _onBackendError(self):
-        if self._player is not None:
-            self._stopPlaying()
-
     def _onBackendStateChange(self, state):
         if state == BackendState.Processing:
             Logger.info("Starting to play music")
@@ -95,10 +86,12 @@ class ElevatedBeatsNSlicesPlugin(Extension):
             self._fadeInTimer.timeout.connect(self._fadein)
             self._fadeInTimer.start(self._fader_speed)  # Every 50 ms the volume will be increased
             self._player.play()
-        elif self._player is not None and (state == BackendState.Done or state == BackendState.Error):
+        elif state == BackendState.Done or state == BackendState.Error:
             self._stopPlaying()
 
     def _fadeout(self):
+        if self._player is None:
+            return
         volume = self._player.audioOutput().volume()
         if volume <= 0.0:  # when volume is 0, stop the music and timer
             self._player.stop()
@@ -109,6 +102,8 @@ class ElevatedBeatsNSlicesPlugin(Extension):
             self._player.audioOutput().setVolume(volume - 0.01)  # decrease volume
 
     def _fadein(self):
+        if self._player is None:
+            return
         volume = self._player.audioOutput().volume()
         if volume >= 1.0:  # when volume is 1, stop the timer
             self._fadeInTimer.stop()
