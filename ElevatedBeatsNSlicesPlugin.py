@@ -7,12 +7,14 @@ from UM.Backend.Backend import BackendState
 from UM.i18n import i18nCatalog
 from UM.Logger import Logger
 
-from PyQt6.QtCore import QUrl, QTimer
+from PyQt6.QtCore import QUrl, QTimer, pyqtSlot
 from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PyQt6.QtWidgets import QFileDialog
 
 from UM.Message import Message
 
 catalog = i18nCatalog("cura")
+DEFAULT_MP3 = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
 
 
 class ElevatedBeatsNSlicesPlugin(Extension):
@@ -23,7 +25,12 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._audio_output = None
         self._fader_speed = 50
         self._error_message: Optional[Message] = None  # Pop-up message that shows errors.
-        CuraApplication.getInstance().engineCreatedSignal.connect(self._onEngineCreated)
+        self._application = CuraApplication.getInstance()
+        self._application.engineCreatedSignal.connect(self._onEngineCreated)
+        self._preferences = self._application.getPreferences()
+        self._preferences.addPreference("elevated_beats_n_slices/source_mp3", DEFAULT_MP3)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Select MP3"), self.selectSourceMP3)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Default"), self.backToDefault)
 
     def _onEngineCreated(self):
         self._backend = CuraApplication.getInstance().getBackend()
@@ -76,9 +83,18 @@ class ElevatedBeatsNSlicesPlugin(Extension):
                 return
             Logger.debug(f"Setting up audio output")
             self._audio_output = QAudioOutput()
-            music_path = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
+            music_path = Path(self._preferences.getValue("elevated_beats_n_slices/source_mp3"))
+            if not music_path.exists():
+                self._error_message = Message(catalog.i18nc("@info:status",
+                                                            f"MP3 file \"{str(music_path)}\" doesn't exist!\n\nFalling back to default music."),
+                                              title = catalog.i18nc("@info:title", "Elevated Beats 'n' Slices Warning"),
+                                              message_type = Message.MessageType.WARNING)
+                self._error_message.show()
+                Logger.warning(f"MP3 file {str(music_path)} does not exist.")
+                self.backToDefault()
+                music_path = Path(self._preferences.getValue("elevated_beats_n_slices/source_mp3"))
             Logger.debug(f"Playing {music_path}")
-            self._player.setSource(QUrl.fromLocalFile(music_path))
+            self._player.setSource(QUrl.fromLocalFile(str(music_path.as_posix())))
             self._player.setAudioOutput(self._audio_output)
             self._player.setLoops(-1)
             self._player.audioOutput().setVolume(0.0)  # set initial volume to 0
@@ -109,3 +125,13 @@ class ElevatedBeatsNSlicesPlugin(Extension):
             self._fadeInTimer.stop()
         else:
             self._player.audioOutput().setVolume(volume + 0.01)  # increase volume
+
+    @pyqtSlot()
+    def selectSourceMP3(self):
+        file_path, _ = QFileDialog.getOpenFileName(None, "Select MP3 File", "", "MP3 Files (*.mp3)")
+        if file_path:
+            self._preferences.setValue("elevated_beats_n_slices/source_mp3", file_path)
+
+    @pyqtSlot()
+    def backToDefault(self):
+        self._preferences.setValue("elevated_beats_n_slices/source_mp3", DEFAULT_MP3)
