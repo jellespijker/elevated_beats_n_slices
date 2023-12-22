@@ -1,7 +1,7 @@
 {
   "name": "Elevated Beats 'n Slices",
   "author": "jellespijker",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Listen to smoothing elevator musak while your print is being sliced.",
   "api": "8",
   "supported_sdk_versions": [ "8.4.0", "8.5.0" ],

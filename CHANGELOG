@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+ - [Feature] Allow user to select their own mp3 file, Github issue #5
+
+ - [Bug fix] Fixed a bug where the plugin couldn't handle different pyQt6 slots, Github issue #12
+
 ## 0.1.3
 
 - [Bug fix] Fixed a bug where the plugin would crash Cura when the user presses `cancel` multiple times. Github issue #11
