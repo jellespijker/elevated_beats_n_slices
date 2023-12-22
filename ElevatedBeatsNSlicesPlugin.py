@@ -52,7 +52,7 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._error_message.show()
         Logger.error(f"An error occurred in QMediaPlayer: {error_dict.get(err_code, str(err_code))}, Error Message: {err_message}")
 
-    def _stopPlaying(self):
+    def _stopPlaying(self, *args, **kwargs):
         Logger.debug("Fading out")
         self._fadeInTimer.stop()  # Stop the fade-in timer
         self._fadeOutTimer = QTimer()
