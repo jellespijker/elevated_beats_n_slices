@@ -7,12 +7,14 @@ from UM.Backend.Backend import BackendState
 from UM.i18n import i18nCatalog
 from UM.Logger import Logger
 
-from PyQt6.QtCore import QUrl, QTimer
+from PyQt6.QtCore import QUrl, QTimer, pyqtSlot
 from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PyQt6.QtWidgets import QFileDialog
 
 from UM.Message import Message
 
 catalog = i18nCatalog("cura")
+DEFAULT_MP3 = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
 
 
 class ElevatedBeatsNSlicesPlugin(Extension):
@@ -26,7 +28,9 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._application = CuraApplication.getInstance()
         self._application.engineCreatedSignal.connect(self._onEngineCreated)
         self._preferences = self._application.getPreferences()
-        self._preferences.addPreference("elevated_beats_n_slices/source_mp3", str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3")))
+        self._preferences.addPreference("elevated_beats_n_slices/source_mp3", DEFAULT_MP3)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Select MP3"), self.selectSourceMP3)
+        self.addMenuItem(catalog.i18nc("@item:inmenu", "Default"), self.backToDefault)
 
     def _onEngineCreated(self):
         self._backend = CuraApplication.getInstance().getBackend()
@@ -112,3 +116,13 @@ class ElevatedBeatsNSlicesPlugin(Extension):
             self._fadeInTimer.stop()
         else:
             self._player.audioOutput().setVolume(volume + 0.01)  # increase volume
+
+    @pyqtSlot()
+    def selectSourceMP3(self):
+        file_path, _ = QFileDialog.getOpenFileName(None, "Select MP3 File", "", "MP3 Files (*.mp3)")
+        if file_path:
+            self._preferences.setValue("elevated_beats_n_slices/source_mp3", file_path)
+
+    @pyqtSlot()
+    def backToDefault(self):
+        self._preferences.setValue("elevated_beats_n_slices/source_mp3", DEFAULT_MP3)
