@@ -83,9 +83,18 @@ class ElevatedBeatsNSlicesPlugin(Extension):
                 return
             Logger.debug(f"Setting up audio output")
             self._audio_output = QAudioOutput()
-            music_path = self._preferences.getValue("elevated_beats_n_slices/source_mp3")
+            music_path = Path(self._preferences.getValue("elevated_beats_n_slices/source_mp3"))
+            if not music_path.exists():
+                self._error_message = Message(catalog.i18nc("@info:status",
+                                                            f"MP3 file \"{str(music_path)}\" doesn't exist!\n\nFalling back to default music."),
+                                              title = catalog.i18nc("@info:title", "Elevated Beats 'n' Slices Warning"),
+                                              message_type = Message.MessageType.WARNING)
+                self._error_message.show()
+                Logger.warning(f"MP3 file {str(music_path)} does not exist.")
+                self.backToDefault()
+                music_path = Path(self._preferences.getValue("elevated_beats_n_slices/source_mp3"))
             Logger.debug(f"Playing {music_path}")
-            self._player.setSource(QUrl.fromLocalFile(music_path))
+            self._player.setSource(QUrl.fromLocalFile(str(music_path.as_posix())))
             self._player.setAudioOutput(self._audio_output)
             self._player.setLoops(-1)
             self._player.audioOutput().setVolume(0.0)  # set initial volume to 0
