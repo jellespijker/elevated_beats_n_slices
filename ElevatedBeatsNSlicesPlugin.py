@@ -23,7 +23,10 @@ class ElevatedBeatsNSlicesPlugin(Extension):
         self._audio_output = None
         self._fader_speed = 50
         self._error_message: Optional[Message] = None  # Pop-up message that shows errors.
-        CuraApplication.getInstance().engineCreatedSignal.connect(self._onEngineCreated)
+        self._application = CuraApplication.getInstance()
+        self._application.engineCreatedSignal.connect(self._onEngineCreated)
+        self._preferences = self._application.getPreferences()
+        self._preferences.addPreference("elevated_beats_n_slices/source_mp3", str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3")))
 
     def _onEngineCreated(self):
         self._backend = CuraApplication.getInstance().getBackend()
@@ -76,7 +79,7 @@ class ElevatedBeatsNSlicesPlugin(Extension):
                 return
             Logger.debug(f"Setting up audio output")
             self._audio_output = QAudioOutput()
-            music_path = str(Path(__file__).parent.joinpath("resources/waiting-music-116216.mp3"))
+            music_path = self._preferences.getValue("elevated_beats_n_slices/source_mp3")
             Logger.debug(f"Playing {music_path}")
             self._player.setSource(QUrl.fromLocalFile(music_path))
             self._player.setAudioOutput(self._audio_output)
